@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal portfolio website showcasing projects, social links, and contact information.">
+    <title></title>
+    <link rel="stylesheet" href="about/about.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <div class="container">
+            <h1>About Me</h1>
+            <nav>
+                <ul>
+                    <li><a href="#about">Men haqimda</a></li>
+                    <li><a href="#portfolio">Loyihalarim</a></li>
+                    <li><a href="#socials">Ijtimoiy  tarmoqlar</a></li>
+                    <li><a href="#contact"> Men bilan aloqa</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- About Me Section -->
+    <section id="about">
+        <div class="container">
+            <h2><img src="https://cdn-icons-png.flaticon.com/128/189/189664.png">Men haqimda</h2>
+            <p>👋Salom. Hozircha ma'lumotlar mavjud emas</p>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio">
+        <div class="container">
+            <h2> <img src="https://cdn-icons-png.flaticon.com/128/18359/18359506.png" alt="Loyihalarim">Loyihalarim</h2>
+
+            <ul>
+                <li><a href="https://github.com/Nameless-devv?tab=repositories" target="_blank">GitHub - Mening loyihalarim</a></li>
+                <li><a href="random/random.html" target="_blank">Random son aniqlash</a></li>
+                <li><a href="time/index.html" target="_blank">Real vaqt</a></li>
+
+            </ul>
+        </div>
+    </section>
+
+    <!-- Social Media Links Section -->
+    <section id="socials">
+        <div class="container">
+            <h2><img src="https://cdn-icons-png.flaticon.com/128/18359/18359503.png"> Meni qayerlardan topish mumkin</h2>
+            <ul>
+                <li>
+                    <a href="https://www.instagram.com/m_sanjarbek04" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/1384/1384063.png" alt="Instagram"> <sup>Instagram</sup></a>
+                </li>
+                <li>
+                    <a href="https://t.me/m_sanjarbek04" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Telegram_2019_Logo.svg/768px-Telegram_2019_Logo.svg.png" alt="Telegram"> <sup>Telegram</sup></a>
+                </li>
+                <li>
+                    <a href="https://github.com/Nameless-devv" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" alt="GitHub"><sup> GitHub</sup></a>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Contact Form Section -->
+    <section id="contact">
+        <div class="container">
+            <h2><img src="https://cdn-icons-png.flaticon.com/128/10439/10439779.png"><b>Men bilan aloqa</b></h2>
+            <p>Agar biron bir savol bo'lsa yoki hamkorlik qilishni istasangiz, bemalol bog'laning!</p>
+            <form action="about/about.php" method="post" id="contact-form">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required><br><br>
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required><br><br>
+
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" required></textarea><br><br>
+                <input type="submit" value="Send Message">
+            </form>
+            <!-- Message Container -->
+            <div id="message-status"></div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer>
+        <div class="container">
+            <p>&copy; Nameless. Hammasi nazoratim ostida.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Form Handling -->
+    <script src="about/about.js"></script>
+</body>
+
+</html>
