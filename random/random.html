@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Number</title>
+    <link rel="stylesheet" href="random.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Random Number Generator</h1>
+        <input type="number" id="maxNumber" placeholder="Enter a number" min="1">
+        <button onclick="generateRandomNumber()">Generate</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function generateRandomNumber() {
+            const maxNumber = document.getElementById('maxNumber').value;
+            if (maxNumber < 1) {
+                alert('Iltimos, 1 dan katta son kiriting!');
+                return;
+            }
+            const randomNumber = Math.floor(Math.random() * maxNumber) + 1;
+            document.getElementById('result').innerText = `Random Raqamingiz: ${randomNumber}`;
+        }
+    </script>
+</body>
+
+</html>

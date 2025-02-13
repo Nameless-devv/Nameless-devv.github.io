@@ -1,0 +1,157 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2em;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+}
+
+section {
+    padding: 40px 0;
+}
+
+section h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+ul {
+    list-style: none;
+}
+
+ul li {
+    margin: 10px 0;
+}
+
+ul li a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+ul li a:hover {
+    text-decoration: underline;
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px;
+}
+
+form {
+    width: 100%;
+}
+
+form input,
+form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+form input[type="submit"] {
+    width: auto;
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+form input[type="submit"]:hover {
+    background-color: #555;
+}
+
+#socials ul {
+    display: flex;
+    justify-content: space-around;
+}
+
+#socials ul li {
+    margin: 10px;
+}
+
+#about img {
+    width: 30px;
+    height: 26px;
+    margin-right: 10px;
+}
+
+#portfolio img {
+    width: 30px;
+    height: 26px;
+    margin-right: 10px;
+}
+
+#socials img {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+#contact img {
+    width: 30px;
+    height: 26px;
+    margin-right: 10px;
+}
+
+#message-status {
+    margin-top: 20px;
+    font-weight: bold;
+    color: green;
+}
+
+@media (max-width: 768px) {
+    nav ul {
+        display: block;
+        text-align: center;
+    }
+    nav ul li {
+        margin: 10px 0;
+    }
+    #socials ul {
+        flex-direction: column;
+        align-items: center;
+    }
+}
