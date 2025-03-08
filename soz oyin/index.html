@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So'z Topish O'yini</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .letter-cell {
+            transition: all 0.2s ease;
+        }
+        
+        .letter-cell.selected {
+            background-color: #5D5CDE;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .word-item.found {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .grid-container {
+            touch-action: none;
+        }
+    </style>
+</head>
+
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <h1 class="text-3xl font-bold text-center mb-4 text-primary">So'z Topish O'yini</h1>
+
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Game controls -->
+            <div class="w-full md:w-1/3 space-y-4 order-2 md:order-1">
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <h2 class="font-bold text-xl mb-2">O'yin sozlamalari</h2>
+
+                    <div class="mb-3">
+                        <label class="block mb-1">Qiyinchilik:</label>
+                        <select id="difficulty" class="w-full p-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-base">
+                            <option value="easy">Oson</option>
+                            <option value="medium" selected>O'rta</option>
+                            <option value="hard">Qiyin</option>
+                        </select>
+                    </div>
+
+                    <button id="start-game" class="w-full bg-primary hover:bg-opacity-90 text-white py-2 px-4 rounded">
+                        O'yinni boshlash
+                    </button>
+                </div>
+
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="font-bold text-xl">Topilishi kerak so'zlar</h2>
+                        <span id="progress" class="font-bold text-primary">0/0</span>
+                    </div>
+                    <div id="word-list" class="space-y-1 max-h-60 overflow-y-auto">
+                        <!-- Words will be added here -->
+                    </div>
+                </div>
+
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-center">
+                    <div class="text-xl">
+                        <span id="timer">00:00</span>
+                    </div>
+                    <div>
+                        <span>Bal: </span>
+                        <span id="score" class="font-bold">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game board -->
+            <div class="w-full md:w-2/3 order-1 md:order-2">
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <div id="grid-container" class="grid-container aspect-square overflow-hidden">
+                        <div id="letter-grid" class="grid gap-1 h-full w-full">
+                            <!-- Grid will be generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game messages -->
+        <div id="message" class="mt-4 text-center hidden"></div>
+
+        <!-- Game instructions -->
+        <div class="mt-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow">
+            <h2 class="font-bold text-xl mb-2">O'yin qoidalari</h2>
+            <p>Harflar jadvali ichida yashiringan so'zlarni toping. So'zlar gorizontal, vertikal yoki diagonal yo'nalishda joylashgan bo'lishi mumkin. Harflarni bosish va surish orqali so'zlarni belgilang.</p>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Game state
+        const gameState = {
+            grid: [],
+            words: [],
+            foundWords: [],
+            gridSize: 0,
+            startTime: null,
+            timerInterval: null,
+            score: 0,
+            currentSelection: {
+                cells: [],
+                startCell: null,
+                currentWord: ''
+            },
+            difficulty: 'medium'
+        };
+
+        // Uzbek alphabet and common words
+        const uzbekAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZOʻGʻSHCH';
+
+        // Word lists by difficulty
+        const wordLists = {
+            easy: [
+                'KITOB', 'QALAM', 'MAKTAB', 'DAFTAR', 'STOL',
+                'OYNA', 'ESHIK', 'BOLA', 'INSON', 'VATAN'
+            ],
+            medium: [
+                'KOMPYUTER', 'TELEFON', 'UNIVERSITET', 'TALABA', 'BILIM',
+                'RESPUBLIKA', 'MUSTAQILLIK', 'XALQ', 'ADABIYOT', 'MADANIYAT'
+            ],
+            hard: [
+                'ISTIQLOL', 'INNOVATSIYA', 'TEXNOLOGIYA', 'MATEMATIKA', 'ARXEOLOGIYA',
+                'FALSAFA', 'PSIXOLOGIYA', 'TADQIQOT', 'MUSHOHADA', 'INTELLEKT'
+            ]
+        };
+
+        // DOM elements
+        const letterGrid = document.getElementById('letter-grid');
+        const wordList = document.getElementById('word-list');
+        const startButton = document.getElementById('start-game');
+        const difficultySelect = document.getElementById('difficulty');
+        const progressEl = document.getElementById('progress');
+        const timerEl = document.getElementById('timer');
+        const scoreEl = document.getElementById('score');
+        const messageEl = document.getElementById('message');
+        const gridContainer = document.getElementById('grid-container');
+
+        // Initialize the game
+        startButton.addEventListener('click', startGame);
+        difficultySelect.addEventListener('change', () => {
+            gameState.difficulty = difficultySelect.value;
+        });
+
+        // Setup initial UI
+        updateScore();
+        updateTimer(0);
+
+        function startGame() {
+            // Reset game state
+            clearInterval(gameState.timerInterval);
+            gameState.foundWords = [];
+            gameState.score = 0;
+            gameState.startTime = Date.now();
+            gameState.currentSelection = {
+                cells: [],
+                startCell: null,
+                currentWord: ''
+            };
+
+            // Set grid size based on difficulty
+            if (gameState.difficulty === 'easy') {
+                gameState.gridSize = 8;
+            } else if (gameState.difficulty === 'medium') {
+                gameState.gridSize = 10;
+            } else {
+                gameState.gridSize = 12;
+            }
+
+            // Get random words for the game
+            gameState.words = getRandomWords(wordLists[gameState.difficulty], 10);
+
+            // Create the grid and place words
+            createGrid();
+
+            // Start the timer
+            updateTimer(0);
+            gameState.timerInterval = setInterval(() => {
+                const elapsedSeconds = Math.floor((Date.now() - gameState.startTime) / 1000);
+                updateTimer(elapsedSeconds);
+            }, 1000);
+
+            // Update UI
+            populateWordList();
+            updateScore();
+            updateProgress();
+
+            // Show the message
+            showMessage('O\'yin boshlandi!', 'success');
+        }
+
+        function getRandomWords(wordList, count) {
+            const shuffled = [...wordList].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, Math.min(count, wordList.length));
+        }
+
+        function createGrid() {
+            // Initialize empty grid
+            gameState.grid = Array(gameState.gridSize).fill().map(() =>
+                Array(gameState.gridSize).fill(''));
+
+            // Place words in the grid
+            for (const word of gameState.words) {
+                placeWordInGrid(word);
+            }
+
+            // Fill remaining empty cells with random letters
+            for (let i = 0; i < gameState.gridSize; i++) {
+                for (let j = 0; j < gameState.gridSize; j++) {
+                    if (gameState.grid[i][j] === '') {
+                        gameState.grid[i][j] = uzbekAlphabet.charAt(
+                            Math.floor(Math.random() * uzbekAlphabet.length)
+                        );
+                    }
+                }
+            }
+
+            // Render the grid to HTML
+            renderGrid();
+        }
+
+        function placeWordInGrid(word) {
+            const directions = [
+                [0, 1], // right
+                [1, 0], // down
+                [1, 1], // diagonal down-right
+                [0, -1], // left
+                [-1, 0], // up
+                [-1, -1], // diagonal up-left
+                [1, -1], // diagonal down-left
+                [-1, 1] // diagonal up-right
+            ];
+
+            // Try to place the word
+            let placed = false;
+            let attempts = 0;
+            const maxAttempts = 100;
+
+            while (!placed && attempts < maxAttempts) {
+                attempts++;
+
+                // Choose random starting point and direction
+                const row = Math.floor(Math.random() * gameState.gridSize);
+                const col = Math.floor(Math.random() * gameState.gridSize);
+                const [rowDir, colDir] = directions[Math.floor(Math.random() * directions.length)];
+
+                // Check if word can fit
+                let canPlace = true;
+                for (let i = 0; i < word.length; i++) {
+                    const newRow = row + i * rowDir;
+                    const newCol = col + i * colDir;
+
+                    if (
+                        newRow < 0 ||
+                        newRow >= gameState.gridSize ||
+                        newCol < 0 ||
+                        newCol >= gameState.gridSize ||
+                        (gameState.grid[newRow][newCol] !== '' &&
+                            gameState.grid[newRow][newCol] !== word[i])
+                    ) {
+                        canPlace = false;
+                        break;
+                    }
+                }
+
+                // Place the word if possible
+                if (canPlace) {
+                    for (let i = 0; i < word.length; i++) {
+                        const newRow = row + i * rowDir;
+                        const newCol = col + i * colDir;
+                        gameState.grid[newRow][newCol] = word[i];
+                    }
+                    placed = true;
+                }
+            }
+
+            // If word couldn't be placed after max attempts, place it horizontally
+            if (!placed) {
+                for (let row = 0; row < gameState.gridSize; row++) {
+                    if (gameState.gridSize - word.length >= 0) {
+                        for (let i = 0; i < word.length; i++) {
+                            gameState.grid[row][i] = word[i];
+                        }
+                        placed = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function renderGrid() {
+            letterGrid.innerHTML = '';
+            letterGrid.style.gridTemplateColumns = `repeat(${gameState.gridSize}, 1fr)`;
+
+            for (let i = 0; i < gameState.gridSize; i++) {
+                for (let j = 0; j < gameState.gridSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'letter-cell flex items-center justify-center font-bold bg-white dark:bg-gray-700 rounded shadow cursor-pointer select-none';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.textContent = gameState.grid[i][j];
+
+                    // Add event listeners for selection
+                    cell.addEventListener('mousedown', handleCellMouseDown);
+                    cell.addEventListener('mouseover', handleCellMouseOver);
+
+                    // Touch events
+                    cell.addEventListener('touchstart', handleCellTouchStart, {
+                        passive: false
+                    });
+                    cell.addEventListener('touchmove', handleCellTouchMove, {
+                        passive: false
+                    });
+
+                    letterGrid.appendChild(cell);
+                }
+            }
+
+            // Document-level event listeners for ending selection
+            document.addEventListener('mouseup', handleSelectionEnd);
+            document.addEventListener('touchend', handleSelectionEnd);
+        }
+
+        function populateWordList() {
+            wordList.innerHTML = '';
+
+            for (const word of gameState.words) {
+                const wordItem = document.createElement('div');
+                wordItem.className = 'word-item py-1 px-2 bg-white dark:bg-gray-700 rounded';
+                wordItem.dataset.word = word;
+                wordItem.textContent = word;
+                wordList.appendChild(wordItem);
+            }
+        }
+
+        // Handle cell selection
+        function handleCellMouseDown(e) {
+            const cell = e.target;
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+
+            // Start new selection
+            resetSelection();
+            gameState.currentSelection.startCell = {
+                row,
+                col
+            };
+            addCellToSelection(cell);
+        }
+
+        function handleCellMouseOver(e) {
+            // Only handle if selection has started
+            if (gameState.currentSelection.startCell === null) return;
+
+            const cell = e.target;
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+
+            // Get start position
+            const startRow = gameState.currentSelection.startCell.row;
+            const startCol = gameState.currentSelection.startCell.col;
+
+            // Only allow straight line selections (horizontal, vertical, or diagonal)
+            if (isValidSelectionDirection(startRow, startCol, row, col)) {
+                resetSelection();
+                selectCellsInLine(startRow, startCol, row, col);
+            }
+        }
+
+        function handleCellTouchStart(e) {
+            e.preventDefault();
+            if (e.touches.length !== 1) return;
+
+            const touch = e.touches[0];
+            const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!cell || !cell.classList.contains('letter-cell')) return;
+
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+
+            resetSelection();
+            gameState.currentSelection.startCell = {
+                row,
+                col
+            };
+            addCellToSelection(cell);
+        }
+
+        function handleCellTouchMove(e) {
+            e.preventDefault();
+            if (e.touches.length !== 1 || gameState.currentSelection.startCell === null) return;
+
+            const touch = e.touches[0];
+            const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!cell || !cell.classList.contains('letter-cell')) return;
+
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+
+            // Get start position
+            const startRow = gameState.currentSelection.startCell.row;
+            const startCol = gameState.currentSelection.startCell.col;
+
+            if (isValidSelectionDirection(startRow, startCol, row, col)) {
+                resetSelection();
+                selectCellsInLine(startRow, startCol, row, col);
+            }
+        }
+
+        function handleSelectionEnd() {
+            if (gameState.currentSelection.cells.length === 0) return;
+
+            checkSelectedWord();
+            resetSelection();
+        }
+
+        function isValidSelectionDirection(startRow, startCol, endRow, endCol) {
+            // Check if selection is in a straight line (horizontal, vertical, or diagonal)
+            const rowDiff = Math.abs(endRow - startRow);
+            const colDiff = Math.abs(endCol - startCol);
+
+            return (
+                rowDiff === 0 || // Horizontal
+                colDiff === 0 || // Vertical
+                rowDiff === colDiff // Diagonal
+            );
+        }
+
+        function selectCellsInLine(startRow, startCol, endRow, endCol) {
+            // Calculate step direction
+            const rowStep = endRow === startRow ? 0 : (endRow > startRow ? 1 : -1);
+            const colStep = endCol === startCol ? 0 : (endCol > startCol ? 1 : -1);
+
+            // Select all cells in the line
+            let row = startRow;
+            let col = startCol;
+
+            while (true) {
+                const cell = document.querySelector(`.letter-cell[data-row="${row}"][data-col="${col}"]`);
+                if (cell) {
+                    addCellToSelection(cell);
+                }
+
+                if (row === endRow && col === endCol) break;
+
+                row += rowStep;
+                col += colStep;
+            }
+        }
+
+        function addCellToSelection(cell) {
+            gameState.currentSelection.cells.push(cell);
+            cell.classList.add('selected');
+            gameState.currentSelection.currentWord += cell.textContent;
+        }
+
+        function resetSelection() {
+            gameState.currentSelection.cells.forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            gameState.currentSelection.cells = [];
+            gameState.currentSelection.currentWord = '';
+        }
+
+        function checkSelectedWord() {
+            const selectedWord = gameState.currentSelection.currentWord;
+
+            // Check if word is in the list and not already found
+            if (
+                gameState.words.includes(selectedWord) &&
+                !gameState.foundWords.includes(selectedWord)
+            ) {
+                // Word found!
+                gameState.foundWords.push(selectedWord);
+
+                // Update score
+                gameState.score += calculateWordScore(selectedWord);
+                updateScore();
+
+                // Mark word as found in the list
+                const wordItem = document.querySelector(`.word-item[data-word="${selectedWord}"]`);
+                if (wordItem) {
+                    wordItem.classList.add('found');
+                }
+
+                // Update progress
+                updateProgress();
+
+                // Show success message
+                showMessage(`"${selectedWord}" so'zini topdingiz!`, 'success');
+
+                // Check if all words found
+                if (gameState.foundWords.length === gameState.words.length) {
+                    gameComplete();
+                }
+            }
+        }
+
+        function calculateWordScore(word) {
+            // More points for longer words
+            return word.length * 10;
+        }
+
+        function updateScore() {
+            scoreEl.textContent = gameState.score;
+        }
+
+        function updateProgress() {
+            progressEl.textContent = `${gameState.foundWords.length}/${gameState.words.length}`;
+        }
+
+        function updateTimer(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function gameComplete() {
+            // Stop the timer
+            clearInterval(gameState.timerInterval);
+
+            // Calculate final score
+            const timeBonus = Math.max(0, 300 - Math.floor((Date.now() - gameState.startTime) / 1000)) * 2;
+            gameState.score += timeBonus;
+            updateScore();
+
+            // Show completion message
+            showMessage(`Tabriklaymiz! Barcha so'zlarni topdingiz! Vaqt bonusi: +${timeBonus}`, 'success');
+
+            // Highlight all word cells (could be implemented to show solution)
+        }
+
+        function showMessage(text, type = 'info') {
+            messageEl.textContent = text;
+            messageEl.className = 'mt-4 text-center p-2 rounded';
+
+            if (type === 'success') {
+                messageEl.classList.add('bg-green-100', 'dark:bg-green-900', 'text-green-800', 'dark:text-green-200');
+            } else if (type === 'error') {
+                messageEl.classList.add('bg-red-100', 'dark:bg-red-900', 'text-red-800', 'dark:text-red-200');
+            } else {
+                messageEl.classList.add('bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
+            }
+
+            messageEl.classList.remove('hidden');
+
+            // Hide message after a few seconds
+            setTimeout(() => {
+                messageEl.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>
